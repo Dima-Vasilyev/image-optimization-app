@@ -97,10 +97,46 @@
               </div>
               <!-- Result image (hidden until loaded) -->
               <img id="imgAfter" class="pane-img hidden" alt="Optimized image">
+              <!-- Filtered output (shown instead of imgAfter when a filter is active) -->
+              <canvas id="filterCanvas" class="pane-img hidden"></canvas>
             </div>
-            <!-- Future: OpenCV.js processing options panel goes here -->
           </div>
 
+        </div>
+
+        <!-- ── Filter panel (OpenCV.js) ──────────────────────────────────── -->
+        <div class="filter-panel hidden" id="filterPanel">
+          <div class="filter-panel-header">
+            <span class="filter-panel-title">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/>
+              </svg>
+              Filters
+            </span>
+            <span class="cv-tag" id="cvTag">
+              <span class="cv-dot cv-dot--loading" id="cvDot"></span>
+              <span id="cvStatus">Loading OpenCV.js…</span>
+            </span>
+          </div>
+
+          <div class="filter-grid" id="filterGrid">
+            <button class="filter-btn filter-btn--active" data-filter="none">Original</button>
+            <button class="filter-btn filter-btn--cv" data-filter="grayscale" disabled>Grayscale</button>
+            <button class="filter-btn filter-btn--cv" data-filter="sharpen"   disabled>Sharpen</button>
+            <button class="filter-btn filter-btn--cv" data-filter="blur"      disabled>Blur</button>
+            <button class="filter-btn filter-btn--cv" data-filter="edges"     disabled>Edges</button>
+            <button class="filter-btn" data-filter="invert">Invert</button>
+            <button class="filter-btn" data-filter="sepia">Sepia</button>
+          </div>
+
+          <!-- Blur radius slider — visible only when Blur is the active filter -->
+          <div class="blur-option hidden" id="blurOption">
+            <label class="blur-label" for="blurRange">Blur radius</label>
+            <div class="blur-slider">
+              <input type="range" id="blurRange" min="1" max="15" value="5">
+              <span id="blurValue">5</span>
+            </div>
+          </div>
         </div>
 
         <!-- Action buttons -->
@@ -124,11 +160,12 @@
     </main>
 
     <footer class="footer">
-      Files are deleted automatically after 30 minutes &nbsp;·&nbsp; Advanced processing via OpenCV.js coming soon
+      OpenCV.js powered filters &nbsp;·&nbsp; Files auto-deleted after 30 minutes
     </footer>
 
   </div>
 
+  <script src="/js/opencv-filters.js"></script>
   <script src="/js/app.js"></script>
 </body>
 </html>

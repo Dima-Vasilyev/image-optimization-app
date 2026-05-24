@@ -12,6 +12,7 @@
 
   const imgBefore       = document.getElementById('imgBefore');
   const imgAfter        = document.getElementById('imgAfter');
+  const filterCanvas    = document.getElementById('filterCanvas');
   const afterPlaceholder= document.getElementById('afterPlaceholder');
   const placeholderText = document.getElementById('placeholderText');
   const spinner         = document.getElementById('spinner');
@@ -25,9 +26,24 @@
   const downloadBtn     = document.getElementById('downloadBtn');
   const resetBtn        = document.getElementById('resetBtn');
 
+  // Filter panel
+  const filterPanel     = document.getElementById('filterPanel');
+  const filterGrid      = document.getElementById('filterGrid');
+  const cvDot           = document.getElementById('cvDot');
+  const cvStatus        = document.getElementById('cvStatus');
+  const blurOption      = document.getElementById('blurOption');
+  const blurRange       = document.getElementById('blurRange');
+  const blurValue       = document.getElementById('blurValue');
+
   // ── Constants ─────────────────────────────────────────────────────────────
-  const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+  const ALLOWED_TYPES  = new Set(['image/jpeg', 'image/png', 'image/webp']);
   const MAX_SIZE_BYTES = 25 * 1024 * 1024;
+
+  // ── Upload state ──────────────────────────────────────────────────────────
+  let activeFilter      = 'none';
+  let serverDownloadUrl = '';
+  let currentFilename   = '';
+  let blurDebounce      = null;
 
   // ── Drag-and-drop ─────────────────────────────────────────────────────────
   dropzone.addEventListener('dragover', (e) => {
@@ -48,7 +64,6 @@
     if (file) handleFile(file);
   });
 
-  // Click on the dropzone (but not on the label/input) also opens the picker
   dropzone.addEventListener('click', (e) => {
     if (e.target.tagName !== 'LABEL' && e.target.tagName !== 'INPUT') {
       fileInput.click();
@@ -67,16 +82,32 @@
   });
 
   resetBtn.addEventListener('click', reset);
+  errorClose.addEventListener('click', () => errorBanner.classList.add('hidden'));
 
-  errorClose.addEventListener('click', () => {
-    errorBanner.classList.add('hidden');
+  // ── Filter panel wiring ───────────────────────────────────────────────────
+  filterGrid.addEventListener('click', (e) => {
+    const btn = e.target.closest('.filter-btn');
+    if (!btn || btn.disabled) return;
+    setActiveFilter(btn.dataset.filter);
   });
 
-  // ── Core flow ─────────────────────────────────────────────────────────────
+  blurRange.addEventListener('input', () => {
+    blurValue.textContent = blurRange.value;
+    clearTimeout(blurDebounce);
+    blurDebounce = setTimeout(() => setActiveFilter('blur'), 160);
+  });
+
+  // Download: use canvas blob when a filter is active, server URL otherwise.
+  downloadBtn.addEventListener('click', (e) => {
+    if (activeFilter === 'none') return; // default <a> href behaviour handles it
+    e.preventDefault();
+    exportFilteredImage();
+  });
+
+  // ── Core upload flow ──────────────────────────────────────────────────────
   function handleFile(file) {
     hideError();
 
-    // Client-side pre-validation — avoids a needless round-trip for obvious rejects
     if (!ALLOWED_TYPES.has(file.type)) {
       showError(`"${file.type || file.name}" is not supported. Please use JPEG, PNG, or WebP.`);
       return;
@@ -86,18 +117,15 @@
       return;
     }
 
-    // Show "Before" preview immediately using the local file (no round-trip needed)
+    // Show "Before" preview immediately from the local file — no round-trip needed
     const reader = new FileReader();
-    reader.onload = (e) => {
-      imgBefore.src = e.target.result;
-    };
+    reader.onload = (e) => { imgBefore.src = e.target.result; };
     reader.readAsDataURL(file);
-
     metaBefore.textContent = `${file.name} · ${formatBytes(file.size)}`;
 
-    // Switch to results view and set After pane to loading state
     uploadSection.classList.add('hidden');
     resultsSection.classList.remove('hidden');
+    filterPanel.classList.add('hidden');
     setAfterLoading(true);
     statOriginal.textContent  = '—';
     statOptimized.textContent = '—';
@@ -106,7 +134,6 @@
     metaAfter.textContent     = '—';
     downloadBtn.classList.add('hidden');
 
-    // Upload and process on the server
     const formData = new FormData();
     formData.append('image', file);
 
@@ -128,21 +155,22 @@
   function onUploadSuccess(data) {
     const { original, optimized } = data;
 
-    // Stats bar
     statOriginal.textContent  = original.sizeFormatted;
     statOptimized.textContent = optimized.sizeFormatted;
     savingsBadge.textContent  = optimized.savedPctFormatted;
-    if (optimized.savedPct < 0) {
-      savingsBadge.classList.add('savings-badge--negative');
-    }
+    if (optimized.savedPct < 0) savingsBadge.classList.add('savings-badge--negative');
 
     metaBefore.textContent = `${original.filename} · ${original.sizeFormatted} · ${original.width}×${original.height}`;
     metaAfter.textContent  = `${optimized.sizeFormatted} · ${optimized.savedPctFormatted} smaller`;
 
-    // Load optimized image into After pane
+    serverDownloadUrl = optimized.downloadUrl;
+    currentFilename   = original.filename;
+
     imgAfter.onload = () => {
       setAfterLoading(false);
       imgAfter.classList.remove('hidden');
+      // Show filter panel and kick off lazy OpenCV.js load
+      initFilterPanel();
     };
     imgAfter.onerror = () => {
       setAfterLoading(false);
@@ -151,10 +179,103 @@
     };
     imgAfter.src = optimized.url;
 
-    // Download button
     downloadBtn.href = optimized.downloadUrl;
     downloadBtn.setAttribute('download', `optimized-${original.filename}`);
     downloadBtn.classList.remove('hidden');
+  }
+
+  // ── Filter panel ──────────────────────────────────────────────────────────
+  function initFilterPanel() {
+    activeFilter = 'none';
+
+    // Reset all buttons to default state
+    filterGrid.querySelectorAll('.filter-btn').forEach((btn) => {
+      btn.classList.toggle('filter-btn--active', btn.dataset.filter === 'none');
+    });
+    blurOption.classList.add('hidden');
+    filterCanvas.classList.add('hidden');
+
+    // Show panel
+    filterPanel.classList.remove('hidden');
+
+    // Start loading OpenCV.js in the background; CV buttons stay disabled until ready
+    setCvState('loading');
+    CVFilters.load(
+      () => {
+        setCvState('ready');
+        filterGrid.querySelectorAll('.filter-btn--cv').forEach(btn => { btn.disabled = false; });
+      },
+      () => setCvState('error'),
+    );
+  }
+
+  function setCvState(state) {
+    cvDot.className = 'cv-dot';
+    if (state === 'loading') {
+      cvDot.classList.add('cv-dot--loading');
+      cvStatus.textContent = 'Loading OpenCV.js…';
+    } else if (state === 'ready') {
+      cvDot.classList.add('cv-dot--ready');
+      cvStatus.textContent = 'OpenCV.js ready';
+    } else {
+      cvDot.classList.add('cv-dot--error');
+      cvStatus.textContent = 'OpenCV.js unavailable';
+    }
+  }
+
+  function setActiveFilter(filterName) {
+    activeFilter = filterName;
+
+    // Button highlight
+    filterGrid.querySelectorAll('.filter-btn').forEach((btn) => {
+      btn.classList.toggle('filter-btn--active', btn.dataset.filter === filterName);
+    });
+
+    // Show/hide blur slider
+    blurOption.classList.toggle('hidden', filterName !== 'blur');
+
+    if (filterName === 'none') {
+      // Restore the original Sharp-optimised image
+      filterCanvas.classList.add('hidden');
+      imgAfter.classList.remove('hidden');
+      downloadBtn.href = serverDownloadUrl;
+      downloadBtn.setAttribute('download', `optimized-${currentFilename}`);
+      return;
+    }
+
+    // Apply filter onto the canvas using the (hidden) imgAfter as source
+    const opts = filterName === 'blur' ? { radius: parseInt(blurRange.value, 10) } : {};
+    const ok   = CVFilters.applyFilter(filterName, imgAfter, filterCanvas, opts);
+
+    if (ok) {
+      imgAfter.classList.add('hidden');
+      filterCanvas.classList.remove('hidden');
+      // Point download at a dynamically generated blob (created at click time)
+      downloadBtn.removeAttribute('href');
+    } else {
+      // OpenCV not ready yet — revert to original view
+      activeFilter = 'none';
+      filterGrid.querySelectorAll('.filter-btn').forEach((btn) => {
+        btn.classList.toggle('filter-btn--active', btn.dataset.filter === 'none');
+      });
+    }
+  }
+
+  function exportFilteredImage() {
+    const ext      = currentFilename.split('.').pop().toLowerCase();
+    const mimeType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+    const quality  = mimeType === 'image/png' ? undefined : 0.92;
+
+    filterCanvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a   = document.createElement('a');
+      a.href     = url;
+      a.download = `filtered-${currentFilename}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, mimeType, quality);
   }
 
   // ── UI helpers ────────────────────────────────────────────────────────────
@@ -162,6 +283,7 @@
     if (loading) {
       afterPlaceholder.classList.remove('hidden');
       imgAfter.classList.add('hidden');
+      filterCanvas.classList.add('hidden');
       placeholderText.textContent = 'Processing…';
       spinner.classList.remove('hidden');
     } else {
@@ -172,9 +294,13 @@
   function reset() {
     uploadSection.classList.remove('hidden');
     resultsSection.classList.add('hidden');
-    imgBefore.src = '';
-    imgAfter.src  = '';
+    filterPanel.classList.add('hidden');
+    imgBefore.src  = '';
+    imgAfter.src   = '';
     fileInput.value = '';
+    activeFilter   = 'none';
+    filterCanvas.classList.add('hidden');
+    blurOption.classList.add('hidden');
     hideError();
   }
 
@@ -189,8 +315,8 @@
   }
 
   function formatBytes(bytes) {
-    if (bytes < 1024)        return `${bytes} B`;
-    if (bytes < 1048576)     return `${(bytes / 1024).toFixed(1)} KB`;
+    if (bytes < 1024)    return `${bytes} B`;
+    if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / 1048576).toFixed(2)} MB`;
   }
 })();

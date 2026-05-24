@@ -30,6 +30,13 @@ app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 
 app.use(express.static(path.join(__dirname, '../public')));
 
+// Serve the pre-built OpenCV.js asm.js bundle from node_modules.
+// Long cache is safe: the path is version-pinned via package-lock.json.
+app.use('/vendor/opencv', express.static(
+  path.join(__dirname, '../node_modules/@techstark/opencv-js/dist'),
+  { maxAge: '7d' },
+));
+
 // Rate limiter scoped only to the API — the HTML page is excluded.
 app.use('/api', rateLimiter, apiRoutes);
 app.use('/', pageRoutes);
