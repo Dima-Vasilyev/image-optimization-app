@@ -3,9 +3,8 @@ const helmet = require('helmet');
 const compression = require('compression');
 const path = require('path');
 
-const rateLimiter = require('./middleware/rateLimiter');
 const pageRoutes = require('./routes/pages');
-const apiRoutes = require('./routes/api');
+const apiRoutes  = require('./routes/api');
 const { startCleanupScheduler } = require('./utils/cleanup');
 
 const app = express();
@@ -40,8 +39,9 @@ app.use('/vendor/opencv', express.static(
   { maxAge: '7d' },
 ));
 
-// Rate limiter scoped only to the API — the HTML page is excluded.
-app.use('/api', rateLimiter, apiRoutes);
+// Rate limits are applied per-route inside apiRoutes (strict for upload/download,
+// permissive for reprocess which fires on every debounced slider change).
+app.use('/api', apiRoutes);
 app.use('/', pageRoutes);
 
 // Global error handler (catches anything that reaches here via next(err))

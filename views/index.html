@@ -69,6 +69,65 @@
           </div>
         </div>
 
+        <!-- ── Settings panel ────────────────────────────────────────────── -->
+        <div class="settings-panel hidden" id="settingsPanel">
+          <div class="settings-header">
+            <span class="settings-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+              </svg>
+              Settings
+            </span>
+            <span class="reprocess-indicator hidden" id="reprocessIndicator">
+              <span class="spinner-xs"></span>
+              Re-optimizing…
+            </span>
+          </div>
+
+          <!-- Preset -->
+          <div class="settings-row">
+            <span class="settings-label">Preset</span>
+            <div class="preset-group" id="presetGroup">
+              <button class="preset-btn"            data-preset="speed">Speed</button>
+              <button class="preset-btn preset-btn--active" data-preset="balanced">Balanced</button>
+              <button class="preset-btn"            data-preset="max_quality">Max Quality</button>
+            </div>
+            <span class="preset-desc" id="presetDesc">mozjpeg · progressive · effort 4</span>
+          </div>
+
+          <!-- Quality (JPEG/WebP only) -->
+          <div class="settings-row hidden" id="qualityRow">
+            <label class="settings-label" for="qualityRange">Quality</label>
+            <div class="range-track">
+              <span class="range-bound">1</span>
+              <input type="range" id="qualityRange" min="1" max="95" value="85">
+              <span class="range-bound">95</span>
+              <span class="range-val" id="qualityVal">85</span>
+            </div>
+          </div>
+
+          <!-- Resize -->
+          <div class="settings-row">
+            <label class="settings-label" for="resizeRange">Resize</label>
+            <div class="range-track">
+              <span class="range-bound">10%</span>
+              <input type="range" id="resizeRange" min="10" max="200" step="5" value="100">
+              <span class="range-bound">200%</span>
+              <span class="range-val" id="resizeVal">100%</span>
+            </div>
+            <span class="resize-dims" id="resizeDims"></span>
+          </div>
+
+          <!-- Metadata -->
+          <div class="settings-row settings-row--meta">
+            <label class="meta-toggle" for="stripMetaCheck">
+              <input type="checkbox" id="stripMetaCheck" checked>
+              <span>Strip EXIF &amp; metadata</span>
+            </label>
+            <span class="settings-note">Auto-orient from EXIF is always applied</span>
+          </div>
+        </div>
+
         <!-- Before / After panes -->
         <div class="comparison">
 

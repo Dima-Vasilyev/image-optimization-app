@@ -356,6 +356,177 @@ body {
   .savings-badge { font-size: 1.5rem; }
 }
 
+/* ── Settings panel ─────────────────────────────────────────────────────── */
+.settings-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: .875rem;
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.settings-title {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  font-size: .875rem;
+  font-weight: 700;
+}
+
+.reprocess-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  font-size: .75rem;
+  color: var(--muted);
+}
+
+/* tiny inline spinner for re-optimizing indicator */
+.spinner-xs {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+  flex-shrink: 0;
+}
+
+/* ── Settings rows ──────────────────────────────────────────────────────── */
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  flex-wrap: wrap;
+}
+
+.settings-row--meta { flex-wrap: wrap; gap: .5rem 1.5rem; }
+
+.settings-label {
+  font-size: .78rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  min-width: 4.5rem;
+  flex-shrink: 0;
+}
+
+/* ── Preset pills ───────────────────────────────────────────────────────── */
+.preset-group {
+  display: flex;
+  gap: .375rem;
+}
+
+.preset-btn {
+  padding: .35rem .9rem;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: .8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+}
+
+.preset-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: #f5f3ff;
+}
+
+.preset-btn--active {
+  background: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: #fff !important;
+}
+
+.preset-desc {
+  font-size: .72rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* ── Range tracks ───────────────────────────────────────────────────────── */
+.range-track {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.range-track input[type="range"] {
+  flex: 1;
+  accent-color: var(--primary);
+  cursor: pointer;
+  min-width: 80px;
+}
+
+.range-bound {
+  font-size: .72rem;
+  color: var(--muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.range-val {
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--primary);
+  min-width: 2.75rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.resize-dims {
+  font-size: .72rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* ── Metadata toggle ────────────────────────────────────────────────────── */
+.meta-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  font-size: .82rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.meta-toggle input[type="checkbox"] {
+  accent-color: var(--primary);
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.settings-note {
+  font-size: .72rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+@media (max-width: 600px) {
+  .settings-row { flex-direction: column; align-items: flex-start; }
+  .preset-group { flex-wrap: wrap; }
+  .range-track  { width: 100%; }
+}
+
 /* ── Filter panel ───────────────────────────────────────────────────────── */
 .filter-panel {
   background: var(--surface);
