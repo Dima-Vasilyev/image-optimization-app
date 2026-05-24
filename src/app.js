@@ -16,7 +16,10 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc:  ["'self'"],
-      scriptSrc:   ["'self'"],
+      // 'unsafe-eval' is required for opencv.js: the asm.js bundle uses
+      // new Function() twice during module initialisation. All scripts are
+      // still origin-restricted to 'self'; we accept no user-supplied code.
+      scriptSrc:   ["'self'", "'unsafe-eval'"],
       styleSrc:    ["'self'", "'unsafe-inline'"],
       imgSrc:      ["'self'", 'data:', 'blob:'],
       connectSrc:  ["'self'"],
