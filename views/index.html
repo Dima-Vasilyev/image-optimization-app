@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ImageOptimize — Compress JPEG, PNG & WebP</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app">
+
+    <!-- ── Header ───────────────────────────────────────────────────────── -->
+    <header class="header">
+      <div class="header-inner">
+        <div class="logo">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+          ImageOptimize
+        </div>
+        <p class="tagline">Lossless &amp; lossy compression for JPEG, PNG &amp; WebP</p>
+      </div>
+    </header>
+
+    <main class="main">
+
+      <!-- ── Error banner (shown on API errors) ───────────────────────── -->
+      <div class="error-banner hidden" id="errorBanner" role="alert">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span id="errorText"></span>
+        <button class="error-close" id="errorClose" aria-label="Dismiss">&#x2715;</button>
+      </div>
+
+      <!-- ── Upload section ───────────────────────────────────────────── -->
+      <section class="upload-section" id="uploadSection">
+        <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Upload image — drag and drop or click to browse">
+          <div class="dropzone-content">
+            <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+            </svg>
+            <h2 class="dropzone-title">Drop your image here</h2>
+            <p class="dropzone-sub">or</p>
+            <label class="btn btn-primary" for="fileInput">Browse Files</label>
+            <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" hidden>
+            <p class="dropzone-hint">JPEG &nbsp;·&nbsp; PNG &nbsp;·&nbsp; WebP &nbsp;·&nbsp; max 25 MB</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Results section (hidden until upload completes) ──────────── -->
+      <section class="results-section hidden" id="resultsSection">
+
+        <!-- Stats bar -->
+        <div class="stats-bar" id="statsBar">
+          <div class="stat">
+            <span class="stat-label">Original</span>
+            <span class="stat-value" id="statOriginal">—</span>
+          </div>
+          <div class="stat stat-center">
+            <span class="savings-badge" id="savingsBadge">—</span>
+            <span class="stat-label">saved</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Optimized</span>
+            <span class="stat-value" id="statOptimized">—</span>
+          </div>
+        </div>
+
+        <!-- Before / After panes -->
+        <div class="comparison">
+
+          <!-- Before -->
+          <div class="pane pane--before">
+            <div class="pane-header">
+              <span class="pane-badge pane-badge--before">Before</span>
+              <span class="pane-meta" id="metaBefore">—</span>
+            </div>
+            <div class="pane-body">
+              <img id="imgBefore" class="pane-img" alt="Original uploaded image">
+            </div>
+          </div>
+
+          <!-- After -->
+          <div class="pane pane--after">
+            <div class="pane-header">
+              <span class="pane-badge pane-badge--after">After</span>
+              <span class="pane-meta" id="metaAfter">—</span>
+            </div>
+            <div class="pane-body" id="afterBody">
+              <!-- Processing state -->
+              <div class="pane-placeholder" id="afterPlaceholder">
+                <div class="spinner" id="spinner"></div>
+                <span class="placeholder-text" id="placeholderText">Processing…</span>
+              </div>
+              <!-- Result image (hidden until loaded) -->
+              <img id="imgAfter" class="pane-img hidden" alt="Optimized image">
+            </div>
+            <!-- Future: OpenCV.js processing options panel goes here -->
+          </div>
+
+        </div>
+
+        <!-- Action buttons -->
+        <div class="actions">
+          <a class="btn btn-download hidden" id="downloadBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Download Optimized
+          </a>
+          <button class="btn btn-secondary" id="resetBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/>
+            </svg>
+            Optimize Another
+          </button>
+        </div>
+
+      </section>
+
+    </main>
+
+    <footer class="footer">
+      Files are deleted automatically after 30 minutes &nbsp;·&nbsp; Advanced processing via OpenCV.js coming soon
+    </footer>
+
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
